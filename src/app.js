@@ -49,10 +49,37 @@ function dectectRoute(RequestTypes) {
     }
     return Route;
 }
+function detectMissingInformation(message, requestTypes) {
+    const lowermessage = message.toLowerCase();
+    const missingInfo = [];
+
+    if (!lowermessage.includes("name")) {
+        missingInfo.push("full_name");
+    }
+    if (!lowermessage.includes("phone")) {
+        missingInfo.push("phone_number");
+    }
+    if (!lowermessage.includes("email")) {
+        missingInfo.push("email address");
+    }
+    return missingInfo;
+    if (!lowermessage.includes("date_of_birth") && !lowermessage.includes("dob")) {
+        missingInfo.push("date_of_birth");
+    }
+    if (requestTypes.includes("appointment") && lowermessage.includes("preferred_date")) {
+        missingInfo.push("preferred_appointment_date");
+    }
+    if (requestTypes.includes("insurance") && lowermessage.includes("insurance_provider")) {
+        missingInfo.push("insurance_provider");
+        missingInfo.push("member_id");
+    }
+    return missingInfo;
+}
 generateButton.addEventListener("click", function() {
     const message = messageInput.value;
     const requestTypes = dectectRequestTypes(message);
     const Route = dectectRoute(requestTypes);
+    const missingInfo = detectMissingInformation(message, requestTypes);
   
     console.log("Button clicked:", message);
     const intakeRecord = {
@@ -63,6 +90,7 @@ generateButton.addEventListener("click", function() {
         request_types: requestTypes,
         routes: Route,
         source_message: message,
+        missing_information: missingInfo,
         human_review_required: false
     };
 
@@ -71,5 +99,6 @@ generateButton.addEventListener("click", function() {
     <p>${message}</p>
     <p>Request Types: ${intakeRecord.request_types.join(", ")}</p>
     <p>Routes: ${intakeRecord.routes.join(", ")}</p>
+    <p>Missing Information: ${intakeRecord.missing_information.join(", ")}</p>
     `;
 });
