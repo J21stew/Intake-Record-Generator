@@ -75,17 +75,46 @@ function detectMissingInformation(message, requestTypes) {
     }
     return missingInfo;
 }
+function detectPriority(message, requestTypes) {
+    const lowermessage = message.toLowerCase();
+
+    if (
+        lowermessage.includes("emergency") ||
+        lowermessage.includes("urgent") ||
+        lowermessage.includes("asap") ||
+        lowermessage.includes("immediately") ||
+        lowermessage.includes("critical") ||
+        lowermessage.includes("life-threatening") ||
+        lowermessage.includes("dying")
+    ) {
+        return "urgent";
+    }
+    
+    if ( 
+        requestTypes.includes("prescription") ||
+        lowermessage.includes("as soon as possible") ||
+        lowermessage.includes("soon") ||
+        lowermessage.includes("quickly") ||
+        lowermessage.includes("time-sensitive") ||
+        lowermessage.includes("need it today") 
+    ) {
+        return "time sensitive";
+    }
+
+    return "normal";
+}
 generateButton.addEventListener("click", function() {
     const message = messageInput.value;
     const requestTypes = dectectRequestTypes(message);
     const Route = dectectRoute(requestTypes);
     const missingInfo = detectMissingInformation(message, requestTypes);
-  
+    const priority = detectPriority(message, requestTypes);
+
     console.log("Button clicked:", message);
     const intakeRecord = {
         id: "INTAKE-001",
         status: "new",
-        priority: "normal", 
+        priority: priority, 
         summary: message,
         request_types: requestTypes,
         routes: Route,
@@ -100,5 +129,6 @@ generateButton.addEventListener("click", function() {
     <p>Request Types: ${intakeRecord.request_types.join(", ")}</p>
     <p>Routes: ${intakeRecord.routes.join(", ")}</p>
     <p>Missing Information: ${intakeRecord.missing_information.join(", ")}</p>
+    <p>Priority: ${intakeRecord.priority}</p>
     `;
 });
