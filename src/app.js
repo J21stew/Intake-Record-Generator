@@ -103,12 +103,32 @@ function detectPriority(message, requestTypes) {
 
     return "normal";
 }
+function detectHumanReview(message, requestTypes, priority) {
+    // Implementation for detecting human review requirement
+    const lowermessage = message.toLowerCase();
+
+    if (priority === "urgent") {
+        return true;
+    }
+    if (requestTypes.includes("prescription")) {
+        return true;
+    }
+    if (
+        lowermessage.includes("diagnose") ||
+        lowermessage.includes("what should i take") ||
+        lowermessage.includes("medical advice")
+    ) {
+        return true;
+    }
+    return false;
+}
 generateButton.addEventListener("click", function() {
     const message = messageInput.value;
     const requestTypes = dectectRequestTypes(message);
     const Route = dectectRoute(requestTypes);
     const missingInfo = detectMissingInformation(message, requestTypes);
     const priority = detectPriority(message, requestTypes);
+    const humanReviewRequired = detectHumanReview(message, requestTypes, priority);
 
     console.log("Button clicked:", message);
     const intakeRecord = {
@@ -120,15 +140,16 @@ generateButton.addEventListener("click", function() {
         routes: Route,
         source_message: message,
         missing_information: missingInfo,
-        human_review_required: false
+        human_review_required: humanReviewRequired
     };
 
     recordOutput.innerHTML = `
     <h2>Message Received:</h2>
     <p>${message}</p>
     <p>Request Types: ${intakeRecord.request_types.join(", ")}</p>
-    <p>Routes: ${intakeRecord.routes.join(", ")}</p>
+    <p>Route To: ${intakeRecord.routes.join(", ")}</p>
     <p>Missing Information: ${intakeRecord.missing_information.join(", ")}</p>
     <p>Priority: ${intakeRecord.priority}</p>
+    <p>Human Review Required: ${intakeRecord.human_review_required ? "Yes" : "No"}</p>
     `;
 });
