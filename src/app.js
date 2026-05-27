@@ -27,7 +27,7 @@ function dectectRequestTypes(message) {
     return RequestTypes;
 }
 function dectectRoute(RequestTypes) {
-    const Route = RequestTypes;
+    const Route = [];
 
     if (RequestTypes.includes("appointment")) {
         Route.push("scheduling_desk");
@@ -62,7 +62,6 @@ function detectMissingInformation(message, requestTypes) {
     if (!lowermessage.includes("email")) {
         missingInfo.push("email address");
     }
-    return missingInfo;
     if (!lowermessage.includes("date_of_birth") && !lowermessage.includes("dob")) {
         missingInfo.push("date_of_birth");
     }
@@ -122,6 +121,18 @@ function detectHumanReview(message, requestTypes, priority) {
     }
     return false;
 }
+function generateSummary(requestTypes) {
+    if (requestTypes.includes("appointment") && requestTypes.includes("insurance")) {
+        return "User needs help with an appoinment and insurance information";
+    }
+    if (requestTypes.includes("appointment")) {
+        return "User needs help with an appointment";
+    }
+    if (requestTypes.includes("insurance")) {
+        return "User needs help with insurance information";
+    }
+    return "User needs help with a general inquiry";
+}
 generateButton.addEventListener("click", function() {
     const message = messageInput.value;
     const requestTypes = dectectRequestTypes(message);
@@ -129,13 +140,13 @@ generateButton.addEventListener("click", function() {
     const missingInfo = detectMissingInformation(message, requestTypes);
     const priority = detectPriority(message, requestTypes);
     const humanReviewRequired = detectHumanReview(message, requestTypes, priority);
-
+    const summary = generateSummary(requestTypes);
     console.log("Button clicked:", message);
     const intakeRecord = {
         id: "INTAKE-001",
         status: "new",
         priority: priority, 
-        summary: message,
+        summary: summary,
         request_types: requestTypes,
         routes: Route,
         source_message: message,
@@ -145,11 +156,12 @@ generateButton.addEventListener("click", function() {
 
     recordOutput.innerHTML = `
     <h2>Message Received:</h2>
-    <p>${message}</p>
+    <p>Priority: ${intakeRecord.priority}</p>
+    <p>Summary: ${intakeRecord.summary}</p>
     <p>Request Types: ${intakeRecord.request_types.join(", ")}</p>
     <p>Route To: ${intakeRecord.routes.join(", ")}</p>
     <p>Missing Information: ${intakeRecord.missing_information.join(", ")}</p>
-    <p>Priority: ${intakeRecord.priority}</p>
+    <p>${message}</p>
     <p>Human Review Required: ${intakeRecord.human_review_required ? "Yes" : "No"}</p>
     `;
 });
