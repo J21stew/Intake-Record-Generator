@@ -26,39 +26,42 @@ function dectectRequestTypes(message) {
     }
     return RequestTypes;
 }
-function dectectRouteTypes(RequestTypes) {
-    const RouteTypes = [];
+function dectectRoute(RequestTypes) {
+    const Route = RequestTypes;
 
     if (RequestTypes.includes("appointment")) {
-        RouteTypes.push("scheduling_desk");
+        Route.push("scheduling_desk");
     }
     if (RequestTypes.includes("insurance")) {
-        RouteTypes.push("insurance_desk");
+        Route.push("insurance_desk");
     }
     if (RequestTypes.includes("billing")) {
-        RouteTypes.push("billing_desk");
+        Route.push("billing_desk");
     }
     if (RequestTypes.includes("prescription")) {
-        RouteTypes.push("clinical_staff_review");
+        Route.push("clinical_staff_review");
     }
     if (RequestTypes.includes("records")) {
-        RouteTypes.push("records_desk");
+        Route.push("records_desk");
     }
     if (RequestTypes.includes("general_question")) {
-        RouteTypes.push("clinical_staff_review");
+        Route.push("patient_services");
     }
-    return RouteTypes;
+    return Route;
 }
 generateButton.addEventListener("click", function() {
     const message = messageInput.value;
+    const requestTypes = dectectRequestTypes(message);
+    const Route = dectectRoute(requestTypes);
+  
     console.log("Button clicked:", message);
     const intakeRecord = {
         id: "INTAKE-001",
         status: "new",
         priority: "normal", 
         summary: message,
-        request_types: dectectRequestTypes(message),
-        routes: dectectRouteTypes(message),
+        request_types: requestTypes,
+        routes: Route,
         source_message: message,
         human_review_required: false
     };
