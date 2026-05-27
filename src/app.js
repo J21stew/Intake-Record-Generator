@@ -1,8 +1,9 @@
 const messageInput = document.getElementById("message-input");
 const generateButton = document.getElementById("generate-button");
 const recordOutput = document.getElementById("record-output");
+const recordDisplay = document.getElementById("record-display")
 
-function dectectRequestTypes(message) {
+function detectRequestTypes(message) {
     const lowermessage = message.toLowerCase();
     const RequestTypes = [];
 
@@ -26,7 +27,7 @@ function dectectRequestTypes(message) {
     }
     return RequestTypes;
 }
-function dectectRoute(RequestTypes) {
+function detectRoute(RequestTypes) {
     const Route = [];
 
     if (RequestTypes.includes("appointment")) {
@@ -60,15 +61,15 @@ function detectMissingInformation(message, requestTypes) {
         missingInfo.push("phone_number");
     }
     if (!lowermessage.includes("email")) {
-        missingInfo.push("email address");
+        missingInfo.push("email_address");
     }
     if (!lowermessage.includes("date_of_birth") && !lowermessage.includes("dob")) {
         missingInfo.push("date_of_birth");
     }
-    if (requestTypes.includes("appointment") && lowermessage.includes("preferred_date")) {
+    if (requestTypes.includes("appointment") && !lowermessage.includes("preferred_date")) {
         missingInfo.push("preferred_appointment_date");
     }
-    if (requestTypes.includes("insurance") && lowermessage.includes("insurance_provider")) {
+    if (requestTypes.includes("insurance") && !lowermessage.includes("insurance_provider")) {
         missingInfo.push("insurance_provider");
         missingInfo.push("member_id");
     }
@@ -123,7 +124,7 @@ function detectHumanReview(message, requestTypes, priority) {
 }
 function generateSummary(requestTypes) {
     if (requestTypes.includes("appointment") && requestTypes.includes("insurance")) {
-        return "User needs help with an appoinment and insurance information";
+        return "User needs help with an appointment and insurance information";
     }
     if (requestTypes.includes("appointment")) {
         return "User needs help with an appointment";
@@ -131,19 +132,36 @@ function generateSummary(requestTypes) {
     if (requestTypes.includes("insurance")) {
         return "User needs help with insurance information";
     }
-    return "User needs help with a general inquiry";
+    if (requestTypes.includes("billing")) {
+    return "User has a billing or invoice question";
+    }
+    if (requestTypes.includes("prescription")) {
+        return "User needs help with a prescription or medication-related request";
+    }
+    if (requestTypes.includes("records")) {
+        return "User needs help with records information";
+    }
+        return "User needs help with a general inquiry";
+}
+function generateRecordId() {
+    return "INTAKE-" + Date.now();
 }
 generateButton.addEventListener("click", function() {
     const message = messageInput.value;
-    const requestTypes = dectectRequestTypes(message);
-    const Route = dectectRoute(requestTypes);
+    if (message.trim() === "") {
+        recordOutput.innerHTML = "<p>Please enter a message before generating a record.</p>";
+        return;
+    }
+    const requestTypes = detectRequestTypes(message);
+    const Route = detectRoute(requestTypes);
     const missingInfo = detectMissingInformation(message, requestTypes);
     const priority = detectPriority(message, requestTypes);
     const humanReviewRequired = detectHumanReview(message, requestTypes, priority);
     const summary = generateSummary(requestTypes);
     console.log("Button clicked:", message);
+    const createdAt = new Date().toISOString();
     const intakeRecord = {
-        id: "INTAKE-001",
+        id: generateRecordId(),
         status: "new",
         priority: priority, 
         summary: summary,
@@ -151,17 +169,23 @@ generateButton.addEventListener("click", function() {
         routes: Route,
         source_message: message,
         missing_information: missingInfo,
-        human_review_required: humanReviewRequired
+        human_review_required: humanReviewRequired,
+        safety_boundary: "Administrative support only. No medical, diagnosis, treatment, financial, or insurance advice provided.",
+        created_at: createdAt
     };
 
-    recordOutput.innerHTML = `
+   recordOutput.innerHTML = `
     <h2>Message Received:</h2>
     <p>Priority: ${intakeRecord.priority}</p>
     <p>Summary: ${intakeRecord.summary}</p>
     <p>Request Types: ${intakeRecord.request_types.join(", ")}</p>
     <p>Route To: ${intakeRecord.routes.join(", ")}</p>
     <p>Missing Information: ${intakeRecord.missing_information.join(", ")}</p>
-    <p>${message}</p>
+    <p>Source Message: ${message}</p>
     <p>Human Review Required: ${intakeRecord.human_review_required ? "Yes" : "No"}</p>
+    <p>Safety Boundary: ${intakeRecord.safety_boundary}</p>
+    <p>Created At: ${intakeRecord.created_at}</p>
+    <h2>Structured JSON:</h2>
+    <pre>${JSON.stringify(intakeRecord, null, 2)}</pre>
     `;
 });
