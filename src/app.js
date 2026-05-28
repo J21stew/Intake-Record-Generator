@@ -1,7 +1,7 @@
 const messageInput = document.getElementById("message-input");
 const generateButton = document.getElementById("generate-button");
-const recordOutput = document.getElementById("record-output");
-const recordDisplay = document.getElementById("record-display")
+const recordDisplay = document.getElementById("record-display");
+const exampleMessage = document.querySelectorAll(".example-message");
 
 function detectRequestTypes(message) {
     const lowermessage = message.toLowerCase();
@@ -19,7 +19,7 @@ function detectRequestTypes(message) {
     if (lowermessage.includes("prescription") || lowermessage.includes("medication") || lowermessage.includes("refill")) {
         RequestTypes.push("prescription");
     }
-    if (lowermessage.includes("records")) {
+    if (lowermessage.includes("record") || lowermessage.includes("medical history") || lowermessage.includes("lab results") || lowermessage.includes("records")) {
         RequestTypes.push("records");
     }
     if (RequestTypes.length === 0) {
@@ -51,25 +51,79 @@ function detectRoute(RequestTypes) {
     return Route;
 }
 function detectMissingInformation(message, requestTypes) {
-    const lowermessage = message.toLowerCase();
+    const lowerMessage = message.toLowerCase();
     const missingInfo = [];
+    // This is a simple check for the presence of an "@" symbol, which is common in email addresses.
+    // This is not a comprehensive email validation, but it serves as a basic indicator for missing email information.
+    const hasEmail = message.includes("@");
 
-    if (!lowermessage.includes("name")) {
-        missingInfo.push("full_name");
+    // Regex means "pattern detector."
+    // This checks for phone numbers like:
+    // 414-555-1234, 414.555.1234, 414 555 1234, or 4145551234.
+    const hasPhone = /\d{3}[-.\s]?\d{3}[-.\s]?\d{4}/.test(message);
+
+    const hasAppointmentDate =
+        lowerMessage.includes("next") ||
+        lowerMessage.includes("tomorrow") ||
+        lowerMessage.includes("monday") ||
+        lowerMessage.includes("tuesday") ||
+        lowerMessage.includes("wednesday") ||
+        lowerMessage.includes("thursday") ||
+        lowerMessage.includes("friday") ||
+        lowerMessage.includes("saturday") ||
+        lowerMessage.includes("sunday") ||
+        lowerMessage.includes("january") ||
+        lowerMessage.includes("february") ||
+        lowerMessage.includes("march") ||
+        lowerMessage.includes("april") ||
+        lowerMessage.includes("may") ||
+        lowerMessage.includes("june") ||
+        lowerMessage.includes("july") ||
+        lowerMessage.includes("august") ||
+        lowerMessage.includes("september") ||
+        lowerMessage.includes("october") ||
+        lowerMessage.includes("november") ||
+        lowerMessage.includes("december");
+    
+    const hasBirthClue =
+        lowerMessage.includes("dob") ||
+        lowerMessage.includes("date of birth") ||
+        lowerMessage.includes("birth date") ||
+        lowerMessage.includes("born");
+    
+    // This is not name detection.
+    // This is name-introduction phrase detection.
+    const possibleName = 
+        lowerMessage.includes("name") ||
+        lowerMessage.includes("i'm") ||
+        lowerMessage.includes("i am") ||
+        lowerMessage.includes("this is"); 
+
+    if (!possibleName) {
+        missingInfo.push("full_name")
     }
-    if (!lowermessage.includes("phone")) {
+    if (!hasPhone) {
         missingInfo.push("phone_number");
     }
-    if (!lowermessage.includes("email")) {
+
+    if (!hasEmail) {
         missingInfo.push("email_address");
     }
-    if (!lowermessage.includes("date_of_birth") && !lowermessage.includes("dob")) {
+    if (!hasBirthClue) {
         missingInfo.push("date_of_birth");
     }
-    if (requestTypes.includes("appointment") && !lowermessage.includes("preferred_date")) {
+
+    if (requestTypes.includes("appointment") && !hasAppointmentDate) {
         missingInfo.push("preferred_appointment_date");
     }
-    if (requestTypes.includes("insurance") && !lowermessage.includes("insurance_provider")) {
+
+    if (
+        requestTypes.includes("insurance") &&
+        !lowerMessage.includes("aetna") &&
+        !lowerMessage.includes("blue cross") &&
+        !lowerMessage.includes("united healthcare") &&
+        !lowerMessage.includes("cigna")
+    ) {
         missingInfo.push("insurance_provider");
         missingInfo.push("member_id");
     }
@@ -146,20 +200,22 @@ function generateSummary(requestTypes) {
 function generateRecordId() {
     return "INTAKE-" + Date.now();
 }
-generateButton.addEventListener("click", function() {
-    const message = messageInput.value;
-    if (message.trim() === "") {
-        recordOutput.innerHTML = "<p>Please enter a message before generating a record.</p>";
-        return;
-    }
+exampleMessage.forEach(function(button) {
+    button.addEventListener("click", function() {
+        const exampleMessage = button.dataset.message;
+        messageInput.value = exampleMessage;
+    });
+})
+
+function generateIntakeRecord(message) {
     const requestTypes = detectRequestTypes(message);
     const Route = detectRoute(requestTypes);
     const missingInfo = detectMissingInformation(message, requestTypes);
     const priority = detectPriority(message, requestTypes);
     const humanReviewRequired = detectHumanReview(message, requestTypes, priority);
     const summary = generateSummary(requestTypes);
-    console.log("Button clicked:", message);
     const createdAt = new Date().toISOString();
+
     const intakeRecord = {
         id: generateRecordId(),
         status: "new",
@@ -173,19 +229,30 @@ generateButton.addEventListener("click", function() {
         safety_boundary: "Administrative support only. No medical, diagnosis, treatment, financial, or insurance advice provided.",
         created_at: createdAt
     };
+    return intakeRecord;
+}
+// record-output = the container
+// record-display = the ticket area inside the container
+generateButton.addEventListener("click", function() {
+    const message = messageInput.value;
+    if (message.trim() === "") {
+        // User-facing output should use textContent unless we intentionally need HTML.
+        recordDisplay.textContent = "Please enter a message before generating a record.";
+        return;
+    }
+    const intakeRecord = generateIntakeRecord(message);
 
-   recordOutput.innerHTML = `
-    <h2>Message Received:</h2>
-    <p>Priority: ${intakeRecord.priority}</p>
-    <p>Summary: ${intakeRecord.summary}</p>
-    <p>Request Types: ${intakeRecord.request_types.join(", ")}</p>
-    <p>Route To: ${intakeRecord.routes.join(", ")}</p>
-    <p>Missing Information: ${intakeRecord.missing_information.join(", ")}</p>
-    <p>Source Message: ${message}</p>
-    <p>Human Review Required: ${intakeRecord.human_review_required ? "Yes" : "No"}</p>
-    <p>Safety Boundary: ${intakeRecord.safety_boundary}</p>
-    <p>Created At: ${intakeRecord.created_at}</p>
-    <h2>Structured JSON:</h2>
-    <pre>${JSON.stringify(intakeRecord, null, 2)}</pre>
+    recordDisplay.textContent = `
+    Message Received:
+    Priority: ${intakeRecord.priority}
+    Summary: ${intakeRecord.summary}
+    Request Types: ${intakeRecord.request_types.join(", ")}
+    Route To: ${intakeRecord.routes.join(", ")}
+    Missing Information: ${intakeRecord.missing_information.join(", ")}
+    Human Review Required: ${intakeRecord.human_review_required ? "Yes" : "No"}
+    Safety Boundary: ${intakeRecord.safety_boundary}
+    Created At: ${intakeRecord.created_at}
+    Structured JSON:
+    recordDisplay.textContent = ${JSON.stringify(intakeRecord, null, 2)}
     `;
 });
