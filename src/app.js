@@ -3,6 +3,13 @@ const generateButton = document.getElementById("generate-button");
 const recordDisplay = document.getElementById("record-display");
 const exampleMessage = document.querySelectorAll(".example-message");
 
+function emergencyRespond(priority) {
+    if (priority === "Urgent") {
+        return "If this is an emergency, call 911 or head to the nearest emergency room!"
+    }
+    return "Administrative support only. No medical, diagnosis, treatment, financial, or insurance advice provided.";
+}
+
 function detectRequestTypes(message) {
     const lowermessage = message.toLowerCase();
     const RequestTypes = [];
@@ -226,7 +233,7 @@ function generateIntakeRecord(message) {
         source_message: message,
         missing_information: missingInfo,
         human_review_required: humanReviewRequired,
-        safety_boundary: "Administrative support only. No medical, diagnosis, treatment, financial, or insurance advice provided.",
+        safety_boundary: emergencyRespond(priority),
         created_at: createdAt
     };
     return intakeRecord;
