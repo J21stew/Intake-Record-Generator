@@ -1,6 +1,7 @@
 const messageInput = document.getElementById("message-input");
 const generateButton = document.getElementById("generate-button");
 const recordDisplay = document.getElementById("record-display");
+const copyJSON = document.getElementById("copy-json");
 const exampleMessage = document.querySelectorAll(".example-message");
 const generatedRecords = [];
 2
@@ -253,6 +254,20 @@ Human Review Required: ${record.human_review_required ? "Yes" : "No"}
 
 // record-output = the container
 // record-display = the ticket area inside the container
+
+copyJSON.addEventListener("click", function() {
+    if (generatedRecords.length === 0) {
+        alert("No records to copy!");
+        recordDisplay.textContent = "Please generate a record before trying to copy JSON.";
+        return;
+    }
+    const latestRecord = generatedRecords[generatedRecords.length - 1];
+    const latestRecordJSON = JSON.stringify(latestRecord, null, 2);
+
+    navigator.clipboard.writeText(latestRecordJSON);
+
+    recordDisplay.textContent += "\n\nLatest JSON copied to clipboard.";
+});
 
 generateButton.addEventListener("click", function() {
     const message = messageInput.value;
