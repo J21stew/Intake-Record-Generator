@@ -2,9 +2,10 @@ const messageInput = document.getElementById("message-input");
 const generateButton = document.getElementById("generate-button");
 const recordDisplay = document.getElementById("record-display");
 const exampleMessage = document.querySelectorAll(".example-message");
-
+const generatedRecords = [];
+2
 function emergencyRespond(priority) {
-    if (priority === "Urgent") {
+    if (priority === "urgent") {
         return "If this is an emergency, call 911 or head to the nearest emergency room!"
     }
     return "Administrative support only. No medical, diagnosis, treatment, financial, or insurance advice provided.";
@@ -238,8 +239,21 @@ function generateIntakeRecord(message) {
     };
     return intakeRecord;
 }
+
+function displayRecordHistory(){
+    return generatedRecords.map(function(record){
+        return `
+Id: ${record.id}
+Priority: ${record.priority}
+Summary: ${record.summary}
+Human Review Required: ${record.human_review_required ? "Yes" : "No"}
+`;
+    }).join("\n----------------\n");
+}
+
 // record-output = the container
 // record-display = the ticket area inside the container
+
 generateButton.addEventListener("click", function() {
     const message = messageInput.value;
     if (message.trim() === "") {
@@ -248,6 +262,7 @@ generateButton.addEventListener("click", function() {
         return;
     }
     const intakeRecord = generateIntakeRecord(message);
+    generatedRecords.push(intakeRecord);
 
     recordDisplay.textContent = `
     Message Received:
@@ -257,9 +272,13 @@ generateButton.addEventListener("click", function() {
     Route To: ${intakeRecord.routes.join(", ")}
     Missing Information: ${intakeRecord.missing_information.join(", ")}
     Human Review Required: ${intakeRecord.human_review_required ? "Yes" : "No"}
-    Safety Boundary: ${intakeRecord.safety_boundary}
+    Safety Message: ${intakeRecord.safety_boundary}
     Created At: ${intakeRecord.created_at}
     Structured JSON:
-    recordDisplay.textContent = ${JSON.stringify(intakeRecord, null, 2)}
+    ${JSON.stringify(intakeRecord, null, 2)}
+
+    History: ${generatedRecords.length}
+    ${displayRecordHistory()}
+
     `;
 });
