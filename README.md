@@ -20,7 +20,7 @@ The goal of this project was to simulate the logic behind intake systems and AI-
 - Timestamp generation
 - JSON output
 - Record storing system
-- Copy latest JSON button
+- Copy JSON button (most recent commit)
 
 ## Disclaimer
 
